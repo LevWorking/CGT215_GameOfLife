@@ -2,20 +2,67 @@
 //
 
 #include <iostream>
+#include <cstdlib>
 #include <SFML/Graphics.hpp>
+#include <random>
+
+using namespace std;
+using namespace sf;
+
+//Set the dimensions of the grid.
+const int gridX = 10;
+const int gridY = 10;
+
+int currentStep[gridX][gridY];
+int nextStep[gridX][gridY];
+
+
+//Initialize the arrays. 
+void initialize()
+{
+    for (int x = 0; x < gridX; x++) 
+    {
+        for (int y = 0; y < gridY; y++)
+        {
+            currentStep[x][y] = 0;
+            nextStep[x][y] = 0;
+        }
+    }
+}
+
+//Had to get this from StackOverflow. 
+//Used for the procedural generator. Might replace later. 
+bool generateBool() 
+{
+    int g = std::rand();
+    return (g % 2); // 1 is converted to true and 0 as false
+
+}
+
+//Randomize the grid of the current array.
+void randomizeGrid() 
+{
+    for (int x = 0; x < gridX; x++)
+    {
+        for (int y = 0; y < gridY; y++)
+        {
+            if (generateBool()) { currentStep[x][y] = 0; }
+            else { currentStep[x][y] = 1; }
+        }
+    }
+}
+
+//Consulting the currentArray, construct the next step in the nextStep array, then reassign that into the current state.
+void simulateStep() {}
+
+void drawGrid() {} 
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    
+    RenderWindow window(VideoMode(800, 600), "Game of Life");
+    initialize();
+    randomizeGrid();
+
+    //do { simulateStep(); drawGrid(); } while (true);
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
