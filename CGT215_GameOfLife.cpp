@@ -10,6 +10,8 @@
 using namespace std;
 using namespace sf;
 
+
+
 //Set the dimensions of the grid.
 const int gridX = 25;
 const int gridY = 20;
@@ -45,6 +47,7 @@ void initialize()
 //Used for the procedural generator. Might replace later. 
 bool generateBool() 
 {
+
     int g = std::rand();
     return (g % 2); // 1 is converted to true and 0 as false
 
@@ -112,8 +115,25 @@ void simulateStep()
                 if (currentStep[x][y + 1] == 1) { alive++; }
             }
 
+            if (alive > 3 || alive < 2)
+            {
+                nextStep[x][y] = 0;
+            }
+            else 
+            {
+                nextStep[x][y] = 1;
+            }
+        }
+        
+        for (int x = 0; x < gridX; x++)
+        {
+            for (int y = 0; y < gridY; y++)
+            {
+                currentStep[x][y] = nextStep[x][y];
+            }
         }
     }
+    //cout << "Step simulated" << endl;
 }
 
 void drawGrid() 
@@ -124,22 +144,46 @@ void drawGrid()
     {
         for (int y = 0; y < gridY; y++)
         {
+            if (currentStep[x][y] == 0) 
+            {
+                cell[x][y].setFillColor(Color(0, 255, 0));
+            }
+            else 
+            {
+                cell[x][y].setFillColor(Color(255, 255, 255));
+            }
             window.draw(cell[x][y]);
         }
     }
-
+    //cout << "Grid Drawn" << endl;
     
 } 
 
 int main()
 {
-   
+    srand(time(nullptr));
+    
+    Clock clock;
+    Time lastTime(clock.getElapsedTime());
+    Time currentTime(lastTime);
+
     initialize();
     randomizeGrid();
 
     do { 
-        simulateStep(); 
+        
+        currentTime = clock.getElapsedTime();
+        Time deltaTime = currentTime - lastTime;
+        long deltaMS = deltaTime.asMilliseconds();
+
+        if (deltaMS > 1000) 
+        {
+            lastTime = currentTime;
+            simulateStep();
+            
+        }
         drawGrid();
+        
         window.display();
     } while (true);
 }
