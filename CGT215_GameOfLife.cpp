@@ -10,21 +10,30 @@
 using namespace std;
 using namespace sf;
 
-
-
 //Set the dimensions of the grid.
 const int gridX = 25;
-const int gridY = 20;
+const int gridY = 25;
 const int buffer = 100;
 
-
 RenderWindow window(VideoMode(800, 600), "Game of Life");
-int cellSize = (window.getSize().x - buffer) / max(gridX, gridY);
-int border = 3;
-RectangleShape cell[gridX][gridY];
 
+
+int cellSize = (window.getSize().x - buffer) / min(gridX, gridY);
+int border = 3;
+
+//Arrays that reference variables gridX or gridY
+RectangleShape cell[gridX][gridY];
 int currentStep[gridX][gridY];
 int nextStep[gridX][gridY];
+
+//Load textures function. 
+void LoadTex(Texture& tex, string filename) {
+    if (!tex.loadFromFile(filename)) {
+        cout << "Could not load " << filename << endl;
+    }
+}
+
+
 
 //Initialize the arrays. 
 void initialize()
@@ -37,7 +46,7 @@ void initialize()
             nextStep[x][y] = 0;
 
             cell[x][y].setSize(Vector2f(cellSize - border, cellSize - border));
-            cell[x][y].setFillColor(Color(255, 255, 255));
+            cell[x][y].setFillColor(Color(255, 0, 255));
             cell[x][y].setPosition(Vector2f(cellSize * x, cellSize * y));
         }
     }
@@ -48,8 +57,8 @@ void initialize()
 bool generateBool() 
 {
 
-    int g = std::rand();
-    return (g % 2); // 1 is converted to true and 0 as false
+    int g = rand() % 100;
+    return (g > 30); // 1 is converted to true and 0 as false
 
 }
 
@@ -69,70 +78,54 @@ void randomizeGrid()
 //Consulting the currentArray, construct the next step in the nextStep array, then reassign that into the current state.
 void simulateStep() 
 {
-    int alive = 0;
+    int alive;
 
     for (int x = 0; x < gridX; x++)
     {
         for (int y = 0; y < gridY; y++)
         {
-            if (x > 0) {
-                if (y > 0) 
-                {
-                    if (currentStep[x - 1][y - 1] == 1) { alive++; }
-                }
+            alive = 0;
 
-                if (currentStep[x - 1][y] == 1) { alive++; }
+            //Loop each neighboring cell. 
+            for (int i = -1; i <= 1; i++) {
+                for (int j = -1; j <= 1; j++) {
+                    
+                    if (i == 0 and j == 0) {
+                        continue;
+                    }
 
-                if (y < gridY) 
-                {
-                    if (currentStep[x - 1][y+1] == 1) { alive++; }
-                }
-            }
-
-            if (y > 0) 
-            {
-                if(x < gridX)
-                { 
-                    if (currentStep[x + 1][y - 1] == 1) { alive++; } 
-                }
-
-                if (currentStep[x][y - 1] == 1) { alive++; }
-                
-            }
-
-            if (x < gridX) 
-            {
-                if (currentStep[x + 1][y] == 1) { alive++; }
-                
-                if(y < gridY)
-                {
-                    if (currentStep[x + 1][y + 1] == 1) { alive++; }
+                    int neighborX = x + i;
+                    int neighborY = y + j;
+                    
+                    if (neighborX >= 0 and neighborX < gridX and neighborY >= 0 and neighborY < gridY) {
+                    
+                        if (currentStep[neighborX][neighborY] == 1) {
+                            alive++;
+                        }
+                    }
                 }
             }
 
-            if (y < gridY) 
-            {
-                if (currentStep[x][y + 1] == 1) { alive++; }
-            }
-
-            if (alive > 3 || alive < 2)
+            if (alive < 2 || alive > 3)
             {
                 nextStep[x][y] = 0;
             }
-            else 
+            else if (alive == 3)
             {
                 nextStep[x][y] = 1;
             }
+            else
+            {
+                nextStep[x][y] = currentStep[x][y];
+            }
+            
+            
         }
         
-        for (int x = 0; x < gridX; x++)
-        {
-            for (int y = 0; y < gridY; y++)
-            {
-                currentStep[x][y] = nextStep[x][y];
-            }
-        }
+        
+        
     }
+    memcpy(currentStep, nextStep, sizeof(currentStep));
     //cout << "Step simulated" << endl;
 }
 
@@ -146,11 +139,11 @@ void drawGrid()
         {
             if (currentStep[x][y] == 0) 
             {
-                cell[x][y].setFillColor(Color(0, 255, 0));
+                cell[x][y].setFillColor(Color(255, 255, 255));
             }
             else 
             {
-                cell[x][y].setFillColor(Color(255, 255, 255));
+                cell[x][y].setFillColor(Color(255, 0, 255));
             }
             window.draw(cell[x][y]);
         }
