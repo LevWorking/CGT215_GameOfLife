@@ -136,7 +136,6 @@ void simulateStep()
     //cout << "Step simulated" << endl;
 }
 
-
 int main()
 {
     Event event; 
@@ -186,75 +185,77 @@ int main()
     Time lastTime(clock.getElapsedTime());
     Time currentTime(lastTime);
 
-    Clock mouseClickCooldown;
 
     initialize();
     randomizeGrid();
 
-    do { 
+    while (window.isOpen()) {
         mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
 
         currentTime = clock.getElapsedTime();
         Time deltaTime = currentTime - lastTime;
         long deltaMS = deltaTime.asMilliseconds();
 
-        //If space key pressed, pause or play depending y'know
-        bool isSpacePressed = Keyboard::isKeyPressed(Keyboard::Space);
-        if (isSpacePressed && !wasSpacePressed) {
-            gamePaused = !gamePaused;
-            if (gamePaused) {
-                pauseButton.setTexture(play);
+        //Handle event logic. 
+        while (window.pollEvent(event)) {
+            
+            if (event.type == Event::Closed) {
+                window.close();
             }
-            else {
-                pauseButton.setTexture(pause);
-            }
-        }
-        wasSpacePressed = isSpacePressed;
 
-        //There's obviously an easier way to do this, but this prevents the program from freezing. Sometimes :(
-        bool isMouseClick = Mouse::isButtonPressed(Mouse::Left);
-        if (isMouseClick && !wasMouseClick && mouseClickCooldown.getElapsedTime().asMilliseconds() > 200) {
-            
-            
-            
-            //Toggle the pause / play button and state if the game is playing. 
-            if (pauseButton.getGlobalBounds().contains(mousePos)) {
-                gamePaused = !gamePaused;
-                if (gamePaused) {
-                    pauseButton.setTexture(play);
+            else if (event.type == Event::KeyPressed) {
+                //If space key pressed, pause or play depending y'know
+                if (event.key.code == sf::Keyboard::Space) {
+                    gamePaused = !gamePaused;
+                    if (gamePaused) {
+                        pauseButton.setTexture(play);
+                    }
+                    else {
+                        pauseButton.setTexture(pause);
+                    }
                 }
-                else {
-                    pauseButton.setTexture(pause);
+                else if (event.key.code == Keyboard::Escape) {
+                    window.close();
                 }
+            } 
+
+            else if (event.type == Event::MouseButtonPressed) {
+
+                if (event.mouseButton.button == Mouse::Left) {
+
+                    mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
+
+                    if (pauseButton.getGlobalBounds().contains(mousePos)) {
+                        gamePaused = !gamePaused;
+                        if (gamePaused) {
+                            pauseButton.setTexture(play);
+                        }
+                        else {
+                            pauseButton.setTexture(pause);
+                        }
+                    }
+
+                    if (resetButton.getGlobalBounds().contains(mousePos))
+                    {
+                        
+                        randomizeGrid();
+                        stepCount = 0;
+                        stepText.setString("Steps: " + to_string(stepCount));
+                    }
+                }
+                
             }
-
-            if (resetButton.getGlobalBounds().contains(mousePos))
-            {
-                stepCount = 0;
-                randomizeGrid();
-            }
-
-
-            mouseClickCooldown.restart();  
-        }
-        wasMouseClick = isMouseClick;
-
-
-        if (Keyboard::isKeyPressed(Keyboard::Escape)) 
-        {
-            exit(0);
         }
 
         if (deltaMS > 1000 and !gamePaused) 
         {
             lastTime = currentTime;
-            simulateStep(); 
-            
+            simulateStep();    
         }
 
-        //Start drawing Stuff
         window.clear();
 
+        //For each cell, set the correct fill color.
         for (int x = 0; x < gridX; x++)
         {
             for (int y = 0; y < gridY; y++)
@@ -274,7 +275,6 @@ int main()
         window.draw(resetButton);
         window.draw(pauseButton);
         window.draw(stepText);
-
         window.display();
-    } while (window.isOpen());
+    }
 }
