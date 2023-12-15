@@ -21,6 +21,7 @@ const int uiPos = window.getSize().y / 5;
 int cellSize = (window.getSize().x - buffer) / min(gridX, gridY);
 int border = 3;
 int stepTime = 1024;
+int livingCells = 0;
 
 //Arrays that reference variables gridX or gridY
 RectangleShape cell[gridX][gridY];
@@ -37,7 +38,10 @@ void LoadTex(Texture& tex, string filename) {
 
 Text stepText;
 Text toolTips;
+Text stats;
 Vector2f mousePos;
+
+String statsText;
 
 //Initialize the arrays. 
 void initialize()
@@ -107,6 +111,7 @@ void toggleCell(Vector2f mousePos) {
 void simulateStep() 
 {
     int alive;
+    livingCells = 0;
 
     for (int x = 0; x < gridX; x++)
     {
@@ -140,6 +145,7 @@ void simulateStep()
             else if (alive == 3)
             {
                 nextStep[x][y] = 1;
+                livingCells++;
             }
             else
             {
@@ -150,6 +156,11 @@ void simulateStep()
     memcpy(currentStep, nextStep, sizeof(currentStep));
     stepCount++;
     stepText.setString("Steps: " + to_string(stepCount));
+
+    stats.setString("Living Cells: " + to_string(livingCells) + "\nDead Cells: " + to_string(gridX * gridY - livingCells));
+
+    //Just debugging things.
+    //cout << livingCells;
     //cout << "Step simulated" << endl;
 }
 
@@ -162,12 +173,13 @@ int main()
     LoadTex(pause, "assets/pause.png");
     
     Sprite pauseButton;
-    pauseButton.setTexture(pause);
+    
     pauseButton.setScale(0.125, 0.125);
     pauseButton.setPosition(window.getSize().x - 0.5 * buffer, uiPos / 4);
 
     Texture play;
     LoadTex(play, "assets/play.png");
+    pauseButton.setTexture(play);
 
     //Reset button restarts & randomizes the simulation.
     Texture reset;
@@ -223,7 +235,16 @@ int main()
     toolTips.setString(toolTipText);
     toolTips.setPosition(window.getSize().x - buffer, uiPos * 3.8);
 
-    bool gamePaused = false; 
+    //Stats about living cells & dead cells.
+    statsText = "Living Cells: " + to_string(livingCells) + "\n";
+    statsText += "Dead Cells: " + to_string(gridX * gridY - livingCells);
+    
+    Text stats;
+    stats.setFont(fnt);
+    stats.setString(statsText);
+    stats.setPosition(window.getSize().x - buffer, uiPos * 2.8);
+
+    bool gamePaused = true; 
     bool wasSpacePressed = false;
     bool wasMouseClick = false;
 
@@ -366,6 +387,9 @@ int main()
         window.draw(eraseButton);
         window.draw(stepText);
         window.draw(toolTips);
+        
+        //Decomissioned because I couldn't fix it. 
+        // window.draw(stats);
 
         window.display();
     }
