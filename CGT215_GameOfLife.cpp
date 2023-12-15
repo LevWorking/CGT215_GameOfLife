@@ -37,8 +37,8 @@ void LoadTex(Texture& tex, string filename) {
     }
 }
 
-
-
+Text stepText;
+Vector2f mousePos;
 
 //Initialize the arrays. 
 void initialize()
@@ -132,67 +132,113 @@ void simulateStep()
     }
     memcpy(currentStep, nextStep, sizeof(currentStep));
     stepCount++;
+    stepText.setString("Steps: " + to_string(stepCount));
     //cout << "Step simulated" << endl;
 }
 
 
 int main()
 {
+    Event event; 
+
     //Setting up buttons and their associated textures. 
     Texture pause;
     LoadTex(pause, "assets/pause.png");
+    
     Sprite pauseButton;
     pauseButton.setTexture(pause);
     pauseButton.setScale(0.125, 0.125);
+    pauseButton.setPosition(window.getSize().x - 0.5 * buffer, uiPos / 4);
 
     Texture play;
     LoadTex(play, "assets/play.png");
 
-    pauseButton.setPosition(window.getSize().x - 0.5 * buffer, uiPos / 4);
+    Texture reset;
+    LoadTex(reset, "assets/reset.png");
+    Sprite resetButton;
+    resetButton.setTexture(reset);
+    resetButton.setScale(0.19, 0.19);
+    resetButton.setPosition(window.getSize().x - 0.5 * buffer, uiPos);
+
 
     //Setting up fonts & variables that use the font. 
     Font fnt;
     if (!fnt.loadFromFile("assets/fnt_cyber.ttf")) {
         cout << "Could not load font." << endl;
         exit(3);
-        Text stepText;
-        stepText.setFont(fnt);
-        stepText.setString("Steps: " + to_string(stepCount));
-        stepText.setPosition(window.getSize().x - 0.2 * buffer, uiPos / 4);
+
     }
+    
+    //Setting up the step counter. 
+    stepText.setFont(fnt);
+    stepText.setString("Steps: " + to_string(stepCount));
+    stepText.setPosition(window.getSize().x - buffer, uiPos / 4);
 
     bool gamePaused = false; 
+    bool wasSpacePressed = false;
+    bool wasMouseClick = false;
+
 
     srand(time(nullptr));
     
+    //Chronomancy :D
     Clock clock;
     Time lastTime(clock.getElapsedTime());
     Time currentTime(lastTime);
+
+    Clock mouseClickCooldown;
 
     initialize();
     randomizeGrid();
 
     do { 
-        
+        mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
+
         currentTime = clock.getElapsedTime();
         Time deltaTime = currentTime - lastTime;
         long deltaMS = deltaTime.asMilliseconds();
 
-        if (Keyboard::isKeyPressed(Keyboard::Space)) 
-        {
+        //If space key pressed, pause or play depending y'know
+        bool isSpacePressed = Keyboard::isKeyPressed(Keyboard::Space);
+        if (isSpacePressed && !wasSpacePressed) {
             gamePaused = !gamePaused;
-            if(gamePaused)
-            {
+            if (gamePaused) {
                 pauseButton.setTexture(play);
             }
-            else
-            {
+            else {
                 pauseButton.setTexture(pause);
+            }
+        }
+        wasSpacePressed = isSpacePressed;
+
+        //There's obviously an easier way to do this, but this prevents the program from freezing. Sometimes :(
+        bool isMouseClick = Mouse::isButtonPressed(Mouse::Left);
+        if (isMouseClick && !wasMouseClick && mouseClickCooldown.getElapsedTime().asMilliseconds() > 200) {
+            
+            
+            
+            //Toggle the pause / play button and state if the game is playing. 
+            if (pauseButton.getGlobalBounds().contains(mousePos)) {
+                gamePaused = !gamePaused;
+                if (gamePaused) {
+                    pauseButton.setTexture(play);
+                }
+                else {
+                    pauseButton.setTexture(pause);
+                }
+            }
+
+            if (resetButton.getGlobalBounds().contains(mousePos))
+            {
+                stepCount = 0;
+                randomizeGrid();
             }
 
 
-            while (Keyboard::isKeyPressed(Keyboard::Space)) {}
+            mouseClickCooldown.restart();  
         }
+        wasMouseClick = isMouseClick;
+
 
         if (Keyboard::isKeyPressed(Keyboard::Escape)) 
         {
@@ -225,7 +271,9 @@ int main()
             }
         }
         
+        window.draw(resetButton);
         window.draw(pauseButton);
+        window.draw(stepText);
 
         window.display();
     } while (window.isOpen());
