@@ -20,6 +20,7 @@ const int uiPos = window.getSize().y / 5;
 
 int cellSize = (window.getSize().x - buffer) / min(gridX, gridY);
 int border = 3;
+int stepTime = 1024;
 
 //Arrays that reference variables gridX or gridY
 RectangleShape cell[gridX][gridY];
@@ -78,6 +79,30 @@ void randomizeGrid()
     }
 }
 
+bool isMouseOverCell(Vector2f mousePos, int cellX, int cellY, int cellSize, int border) {
+    FloatRect cellBounds(cellX * cellSize, cellY * cellSize, cellSize - border, cellSize - border);
+    return cellBounds.contains(mousePos);
+}
+
+void toggleCell(Vector2f mousePos) {
+    for (int x = 0; x < gridX; x++) {
+        for (int y = 0; y < gridY; y++) {
+            if (isMouseOverCell(mousePos, x, y, cellSize, border)) {
+                currentStep[x][y] = 1 - currentStep[x][y]; //Swap the state.
+                if (currentStep[x][y] == 0)
+                {
+                    cell[x][y].setFillColor(Color(255, 255, 255));
+                }
+                else
+                {
+                    cell[x][y].setFillColor(Color(255, 0, 255));
+                }
+            }
+        }
+    }
+}
+
+
 //Consulting the currentArray, construct the next step in the nextStep array, then reassign that into the current state.
 void simulateStep() 
 {
@@ -97,15 +122,14 @@ void simulateStep()
                         continue;
                     }
 
-                    int neighborX = x + i;
-                    int neighborY = y + j;
+                    //This wraps the screen without errors. 
+                    int neighborX = (x + i + gridX) % gridX;
+                    int neighborY = (y + j + gridY) % gridY;
                     
-                    if (neighborX >= 0 and neighborX < gridX and neighborY >= 0 and neighborY < gridY) {
-                    
-                        if (currentStep[neighborX][neighborY] == 1) {
-                            alive++;
-                        }
+                    if (currentStep[neighborX][neighborY] == 1) {
+                        alive++;
                     }
+                    
                 }
             }
 
@@ -145,12 +169,28 @@ int main()
     Texture play;
     LoadTex(play, "assets/play.png");
 
+    //Reset button restarts & randomizes the simulation.
     Texture reset;
     LoadTex(reset, "assets/reset.png");
     Sprite resetButton;
     resetButton.setTexture(reset);
     resetButton.setScale(0.19, 0.19);
     resetButton.setPosition(window.getSize().x - 0.5 * buffer, uiPos);
+
+    //Accelerate speeds up the simulation speed.
+    Texture accelerate;
+    LoadTex(accelerate, "assets/accelerate.png");
+    Sprite fastButton;
+    fastButton.setTexture(accelerate);
+    fastButton.setScale(0.19, 0.19);
+    fastButton.setPosition(window.getSize().x - 0.5 * buffer, 1.75 * uiPos);
+
+    Texture decelerate;
+    LoadTex(decelerate, "assets/decelerate.png");
+    Sprite slowButton;
+    slowButton.setTexture(decelerate);
+    slowButton.setScale(0.19, 0.19);
+    slowButton.setPosition(window.getSize().x - 0.85 * buffer, 1.75 * uiPos);
 
     //Setting up fonts & variables that use the font. 
     Font fnt;
@@ -165,14 +205,15 @@ int main()
     stepText.setString("Steps: " + to_string(stepCount));
     stepText.setPosition(window.getSize().x - buffer, uiPos / 4);
 
-    String toolTipText = "Keyboard Short Cuts\n";
+    String toolTipText = "Click cells to edit.\n";
+    toolTipText += "Keyboard Short Cuts\n";
     toolTipText += "Space: Pause/Play\n";
     toolTipText += "Escape: Exit\n";
     toolTipText += "E: Randomize";
 
     toolTips.setFont(fnt);
     toolTips.setString(toolTipText);
-    toolTips.setPosition(window.getSize().x - buffer, uiPos * 4);
+    toolTips.setPosition(window.getSize().x - buffer, uiPos * 3.8);
 
     bool gamePaused = false; 
     bool wasSpacePressed = false;
@@ -229,6 +270,9 @@ int main()
                 if (event.mouseButton.button == Mouse::Left) {
 
                     mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
+                    
+                    //Checks each cell to see if they have been clicked, switches their state if true. 
+                    toggleCell(mousePos);
 
                     if (pauseButton.getGlobalBounds().contains(mousePos)) {
                         gamePaused = !gamePaused;
@@ -247,12 +291,23 @@ int main()
                         stepCount = 0;
                         stepText.setString("Steps: " + to_string(stepCount));
                     }
+
+                    if (fastButton.getGlobalBounds().contains(mousePos))
+                    {
+                        stepTime *= 0.5; 
+                    }
+
+                    if (slowButton.getGlobalBounds().contains(mousePos))
+                    {
+                        stepTime *= 2;
+                    }
+
                 }
                 
             }
         }
 
-        if (deltaMS > 1000 and !gamePaused) 
+        if (deltaMS > stepTime and !gamePaused) 
         {
             lastTime = currentTime;
             simulateStep();    
@@ -279,6 +334,8 @@ int main()
         
         window.draw(resetButton);
         window.draw(pauseButton);
+        window.draw(fastButton);
+        window.draw(slowButton);
         window.draw(stepText);
         window.draw(toolTips);
 
