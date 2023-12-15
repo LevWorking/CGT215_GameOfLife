@@ -10,7 +10,6 @@
 using namespace std;
 using namespace sf;
 
-
 RenderWindow window(VideoMode(1200, 800), "Game of Life");
 
 //Set the dimensions of the grid.
@@ -19,7 +18,6 @@ const int gridY = 20;
 const int buffer = window.getSize().x / 4;
 const int uiPos = window.getSize().y / 5;
 
-
 int cellSize = (window.getSize().x - buffer) / min(gridX, gridY);
 int border = 3;
 
@@ -27,7 +25,6 @@ int border = 3;
 RectangleShape cell[gridX][gridY];
 int currentStep[gridX][gridY];
 int nextStep[gridX][gridY];
-
 int stepCount = 0;
 
 //Load textures function. 
@@ -38,6 +35,7 @@ void LoadTex(Texture& tex, string filename) {
 }
 
 Text stepText;
+Text toolTips;
 Vector2f mousePos;
 
 //Initialize the arrays. 
@@ -123,12 +121,7 @@ void simulateStep()
             {
                 nextStep[x][y] = currentStep[x][y];
             }
-            
-            
-        }
-        
-        
-        
+        }                        
     }
     memcpy(currentStep, nextStep, sizeof(currentStep));
     stepCount++;
@@ -159,7 +152,6 @@ int main()
     resetButton.setScale(0.19, 0.19);
     resetButton.setPosition(window.getSize().x - 0.5 * buffer, uiPos);
 
-
     //Setting up fonts & variables that use the font. 
     Font fnt;
     if (!fnt.loadFromFile("assets/fnt_cyber.ttf")) {
@@ -173,10 +165,18 @@ int main()
     stepText.setString("Steps: " + to_string(stepCount));
     stepText.setPosition(window.getSize().x - buffer, uiPos / 4);
 
+    String toolTipText = "Keyboard Short Cuts\n";
+    toolTipText += "Space: Pause/Play\n";
+    toolTipText += "Escape: Exit\n";
+    toolTipText += "E: Randomize";
+
+    toolTips.setFont(fnt);
+    toolTips.setString(toolTipText);
+    toolTips.setPosition(window.getSize().x - buffer, uiPos * 4);
+
     bool gamePaused = false; 
     bool wasSpacePressed = false;
     bool wasMouseClick = false;
-
 
     srand(time(nullptr));
     
@@ -184,7 +184,6 @@ int main()
     Clock clock;
     Time lastTime(clock.getElapsedTime());
     Time currentTime(lastTime);
-
 
     initialize();
     randomizeGrid();
@@ -216,6 +215,12 @@ int main()
                 }
                 else if (event.key.code == Keyboard::Escape) {
                     window.close();
+                }
+                else if (event.key.code == Keyboard::E)
+                {
+                    randomizeGrid();
+                    stepCount = 0;
+                    stepText.setString("Steps: " + to_string(stepCount));
                 }
             } 
 
@@ -275,6 +280,8 @@ int main()
         window.draw(resetButton);
         window.draw(pauseButton);
         window.draw(stepText);
+        window.draw(toolTips);
+
         window.display();
     }
 }
