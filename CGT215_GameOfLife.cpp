@@ -10,12 +10,14 @@
 using namespace std;
 using namespace sf;
 
-//Set the dimensions of the grid.
-const int gridX = 25;
-const int gridY = 25;
-const int buffer = 100;
 
-RenderWindow window(VideoMode(800, 600), "Game of Life");
+RenderWindow window(VideoMode(1200, 800), "Game of Life");
+
+//Set the dimensions of the grid.
+const int gridX = 20;
+const int gridY = 20;
+const int buffer = window.getSize().x / 4;
+const int uiPos = window.getSize().y / 5;
 
 
 int cellSize = (window.getSize().x - buffer) / min(gridX, gridY);
@@ -26,12 +28,15 @@ RectangleShape cell[gridX][gridY];
 int currentStep[gridX][gridY];
 int nextStep[gridX][gridY];
 
+int stepCount = 0;
+
 //Load textures function. 
 void LoadTex(Texture& tex, string filename) {
     if (!tex.loadFromFile(filename)) {
         cout << "Could not load " << filename << endl;
     }
 }
+
 
 
 
@@ -126,34 +131,38 @@ void simulateStep()
         
     }
     memcpy(currentStep, nextStep, sizeof(currentStep));
+    stepCount++;
     //cout << "Step simulated" << endl;
 }
 
-void drawGrid() 
-{
-    window.clear();
-
-    for (int x = 0; x < gridX; x++)
-    {
-        for (int y = 0; y < gridY; y++)
-        {
-            if (currentStep[x][y] == 0) 
-            {
-                cell[x][y].setFillColor(Color(255, 255, 255));
-            }
-            else 
-            {
-                cell[x][y].setFillColor(Color(255, 0, 255));
-            }
-            window.draw(cell[x][y]);
-        }
-    }
-    //cout << "Grid Drawn" << endl;
-    
-} 
 
 int main()
 {
+    //Setting up buttons and their associated textures. 
+    Texture pause;
+    LoadTex(pause, "assets/pause.png");
+    Sprite pauseButton;
+    pauseButton.setTexture(pause);
+    pauseButton.setScale(0.125, 0.125);
+
+    Texture play;
+    LoadTex(play, "assets/play.png");
+
+    pauseButton.setPosition(window.getSize().x - 0.5 * buffer, uiPos / 4);
+
+    //Setting up fonts & variables that use the font. 
+    Font fnt;
+    if (!fnt.loadFromFile("assets/fnt_cyber.ttf")) {
+        cout << "Could not load font." << endl;
+        exit(3);
+        Text stepText;
+        stepText.setFont(fnt);
+        stepText.setString("Steps: " + to_string(stepCount));
+        stepText.setPosition(window.getSize().x - 0.2 * buffer, uiPos / 4);
+    }
+
+    bool gamePaused = false; 
+
     srand(time(nullptr));
     
     Clock clock;
@@ -169,14 +178,55 @@ int main()
         Time deltaTime = currentTime - lastTime;
         long deltaMS = deltaTime.asMilliseconds();
 
-        if (deltaMS > 1000) 
+        if (Keyboard::isKeyPressed(Keyboard::Space)) 
+        {
+            gamePaused = !gamePaused;
+            if(gamePaused)
+            {
+                pauseButton.setTexture(play);
+            }
+            else
+            {
+                pauseButton.setTexture(pause);
+            }
+
+
+            while (Keyboard::isKeyPressed(Keyboard::Space)) {}
+        }
+
+        if (Keyboard::isKeyPressed(Keyboard::Escape)) 
+        {
+            exit(0);
+        }
+
+        if (deltaMS > 1000 and !gamePaused) 
         {
             lastTime = currentTime;
-            simulateStep();
+            simulateStep(); 
             
         }
-        drawGrid();
+
+        //Start drawing Stuff
+        window.clear();
+
+        for (int x = 0; x < gridX; x++)
+        {
+            for (int y = 0; y < gridY; y++)
+            {
+                if (currentStep[x][y] == 0)
+                {
+                    cell[x][y].setFillColor(Color(255, 255, 255));
+                }
+                else
+                {
+                    cell[x][y].setFillColor(Color(255, 0, 255));
+                }
+                window.draw(cell[x][y]);
+            }
+        }
         
+        window.draw(pauseButton);
+
         window.display();
-    } while (true);
+    } while (window.isOpen());
 }
