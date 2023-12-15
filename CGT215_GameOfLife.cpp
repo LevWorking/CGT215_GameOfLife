@@ -192,12 +192,19 @@ int main()
     slowButton.setScale(0.19, 0.19);
     slowButton.setPosition(window.getSize().x - 0.85 * buffer, 1.75 * uiPos);
 
+    //Eraser button
+    Texture erase;
+    LoadTex(erase, "assets/erase.png");
+    Sprite eraseButton;
+    eraseButton.setTexture(erase);
+    eraseButton.setScale(0.042, 0.042);
+    eraseButton.setPosition(window.getSize().x - 0.85 * buffer, uiPos);
+
     //Setting up fonts & variables that use the font. 
     Font fnt;
     if (!fnt.loadFromFile("assets/fnt_cyber.ttf")) {
         cout << "Could not load font." << endl;
         exit(3);
-
     }
     
     //Setting up the step counter. 
@@ -205,6 +212,7 @@ int main()
     stepText.setString("Steps: " + to_string(stepCount));
     stepText.setPosition(window.getSize().x - buffer, uiPos / 4);
 
+    //Setting up the tooltips at screen bottom. 
     String toolTipText = "Click cells to edit.\n";
     toolTipText += "Keyboard Short Cuts\n";
     toolTipText += "Space: Pause/Play\n";
@@ -302,6 +310,25 @@ int main()
                         stepTime *= 2;
                     }
 
+                    if(eraseButton.getGlobalBounds().contains(mousePos))
+                    {
+                        initialize();
+                        for (int x = 0; x < gridX; x++)
+                        {
+                            for (int y = 0; y < gridY; y++)
+                            {
+                                if (currentStep[x][y] == 0)
+                                {
+                                    cell[x][y].setFillColor(Color(255, 255, 255));
+                                }
+                                else
+                                {
+                                    cell[x][y].setFillColor(Color(255, 0, 255));
+                                }
+                                window.draw(cell[x][y]);
+                            }
+                        }
+                    }
                 }
                 
             }
@@ -336,6 +363,7 @@ int main()
         window.draw(pauseButton);
         window.draw(fastButton);
         window.draw(slowButton);
+        window.draw(eraseButton);
         window.draw(stepText);
         window.draw(toolTips);
 
